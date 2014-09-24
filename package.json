@@ -1,0 +1,16 @@
+{
+  "name": "diff-popup",
+  "main": "./lib/diff-popup",
+  "version": "0.1.0",
+  "description": "Show Git or Live-Archive diffs in editor with one click. .",
+  "repository": "https://github.com/mark-hahn/diff-popup",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=0.127.0"
+  },
+  "dependencies": {
+    "underscore-plus":   ">=1.5.1",
+    "underscore.string": ">=2.3.0",
+    "text-archive-engine": "mark-hahn/text-archive-engine"
+  }
+}
