@@ -22,10 +22,12 @@ module.exports =
     atom.workspaceView.command "diff-popup:toggle", => 
       if not @delayActivated then @delayedActivate()
       if @diffView?.hasParent() then @close(); return
+      @mouseIsDown = no
       range  = @editor.getLastSelection().getBufferRange()
-      range  = [[range.start.row, 0], [range.end.row + 1, 0]]
-      @editor.setSelectedBufferRange range
-      @haveRange range
+      @initPos = [range.start.row, 0]
+      @lastPos = [range.end.row+1, 0]
+      @setSelectedBufferRange()
+      @haveSelLines()
     
   delayedActivate: ->
     @fs       = require 'fs'
@@ -52,45 +54,59 @@ module.exports =
     @$itemViews.off 'mousedown', @activeMousedown
     @handleEvents()
     @delayActivated = yes
-  
+    
   lineFromPageY: (pageY) ->
     ofs = @editorView.scrollView.offset()
     top = pageY - ofs.top + @editorView.scrollTop()
     row = Math.floor  top / @editorView.lineHeight
     @editor.bufferPositionForScreenPosition([row, 0]).row
     
-  selLines: (topY, botY) ->
-
   mousedown: (e) ->
-    if @trackingMouse or not e.altKey or not e.ctrlKey
-      @trackingMouse = no
-      return
+    if not e.altKey or not e.ctrlKey then @mouseIsDown = no; return
+    if @diffView?.hasParent() then @close(); return
+    @mouseIsDown = yes
     line = @lineFromPageY e.pageY
     @initPos = [line,   0] 
     @lastPos = [line+1, 0]
-    @editor.setSelectedBufferRange [@initPos, @lastPos]
-    @mouseIsDown = yes
-    console.log 'mousedown'
+    @setSelectedBufferRange()
   
   mousemove: (e) ->
     if not @mouseIsDown then return
     @lastPos = [@lineFromPageY(e.pageY)+1, 0]
-    @editor.setSelectedBufferRange [@initPos, @lastPos]
-    @trackingMouse = yes
-    console.log 'mouseup'
+    @setSelectedBufferRange()
   
   mouseup: (e) ->
     if not @mouseIsDown then return
-    console.log 'mouseup'
-    line = @lineFromPageY e.pageY
-    @lastPos = [line+1, 0]
-    @editor.setSelectedBufferRange [@initPos, @lastPos]
-    @haveRange [@initPos, @lastPos]
-    @trackingMouse = @mouseIsDown = no
+    @mouseIsDown = no
+    line = @lineFromPageY(e.pageY) + 1
+    @lastPos = [line, 0]
+    @setSelectedBufferRange()
+    @haveSelLines()
     
-  haveRange: (range) ->
-    console.log 'haveRange', range
+  chkOrder: ->
+    if @initPos[0] <= @lastPos[0] - 1
+      [@initPos, @lastPos]
+    else
+      [[@lastPos[0]-1,0], [@initPos[0]+1, 0]]
+        
+  setSelectedBufferRange: ->
+    # @editor.setSelectedBufferRange @chkOrder()
+    range = @chkOrder()
+    $lineNum = @editorView.find '.gutter .line-number'
+    $lineNum.find('.icon-right').removeClass 'diff-pop-hilite'
+    top = $lineNum.index $lineNum.filter \
+  	       '[data-buffer-row="' + range[0][0] + '"]'
+    bot = $lineNum.index $lineNum.filter \
+          '[data-buffer-row="' + range[1][0] + '"]'
+    $lineNum.slice top, bot
+            .find '.icon-right'
+            .addClass 'diff-pop-hilite'
   
+  haveSelLines: ->
+    [[top, nil], [bot, nil]] = @chkOrder()
+    console.log 'haveSelLines', {top, bot}
+    
+    
   handleEvents: ->
     @editorView.on      'mousedown', '.line', (e) => @mousedown e
     @editorView.on      'mousemove',          (e) => @mousemove e
@@ -99,6 +115,5 @@ module.exports =
     
   close: ->
     @diffView?.destroy()
-    @mouseIsDown = @trackingMouse =
-    @initPageX   = @initPageY =
-    @lastPageX   = @lastPageY = null
+    @mouseIsDown = @initPos = @lastPos = null
+    
