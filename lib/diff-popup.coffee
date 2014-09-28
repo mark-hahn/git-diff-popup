@@ -1,4 +1,4 @@
-###
+### 2
  lib\diff-popup.coffee
 ###
 
@@ -7,7 +7,7 @@
 module.exports = 
 
   configDefaults:
-    lineGapsAllowedInGitRegion: 3
+    maximumLinesInGitGap: 3
   
   activate: ->
     @$itemViews = atom.workspaceView.find '.item-views'
@@ -24,6 +24,7 @@ module.exports =
       if @diffView?.hasParent() then @close(); return
       @mouseIsDown = no
       range  = @editor.getLastSelection().getBufferRange()
+      @noSelection = range.isEmpty()
       @initPos = [range.start.row, 0]
       @lastPos = [range.end.row+1, 0]
       @setSelectedBufferRange()
@@ -37,12 +38,13 @@ module.exports =
     @editorView      = atom.workspaceView.getActiveView()
     @editor          = @editorView.getModel()
     @filePath        = @editor.getPath()
-    @rootDir         = atom.project.getRootDirectory().path
-    @archiveDir      = @rootDir + '/.live-archive'
+    @projPath        = atom.project.getRootDirectory().path
+    @archiveDir      = @projPath + '/.live-archive'
     @haveLiveArchive = @fs.existsSync @archiveDir
-    @haveGitRepo     = (@repo = atom.project.getRepo())?
+    @gitRepo         = atom.project.getRepo()
+    @maxGitGap       = atom.config.get 'diff-popup.maximumLinesInGitGap'
     
-    console.log 'delayedActivate', {@haveGitRepo, @haveLiveArchive}
+    console.log 'delayedActivate', {@gitRepo, @haveLiveArchive}
     
     if not @haveGitRepo and not @haveLiveArchive
         atom.confirm
@@ -65,6 +67,7 @@ module.exports =
     if not e.altKey or not e.ctrlKey then @mouseIsDown = no; return
     if @diffView?.hasParent() then @close(); return
     @mouseIsDown = yes
+    @noSelection = yes
     line = @lineFromPageY e.pageY
     @initPos = [line,   0] 
     @lastPos = [line+1, 0]
@@ -72,6 +75,7 @@ module.exports =
   
   mousemove: (e) ->
     if not @mouseIsDown then return
+    @noSelection = no
     @lastPos = [@lineFromPageY(e.pageY)+1, 0]
     @setSelectedBufferRange()
   
@@ -90,7 +94,6 @@ module.exports =
       [[@lastPos[0]-1,0], [@initPos[0]+1, 0]]
         
   setSelectedBufferRange: ->
-    # @editor.setSelectedBufferRange @chkOrder()
     range = @chkOrder()
     $lineNum = @editorView.find '.gutter .line-number'
     $lineNum.find('.icon-right').removeClass 'diff-pop-hilite'
@@ -104,9 +107,46 @@ module.exports =
   
   haveSelLines: ->
     [[top, nil], [bot, nil]] = @chkOrder()
-    console.log 'haveSelLines', {top, bot}
-    
-    
+    usingGit = no
+    if @gitRepo and @gitRepo.isPathModified @filePath
+      gitStrt = null
+      gitDiffs = @gitRepo.getLineDiffs @filePath, @editor.getText()
+      for gitDiff, centerDiffIdx in gitDiffs
+        gitStrt  = gitDiff.newStart
+        gitEnd   = gitStrt + gitDiff.newLines
+        gitMatch = (gitStrt - @maxGitGap <= top < gitEnd + @maxGitGap)
+        if gitMatch
+          diffIdx = centerDiffIdx
+          while (gitDiffBefore = gitDiffs[--diffIdx])
+            gitBot = gitDiffBefore.newStart + gitDiffBefore.newLines
+            gitBot = Math.max gitBot - @maxGitGap, 0
+            if gitBot >= gitStrt then gitStrt = gitDiffBefore.newStart
+            else break
+          diffIdx = centerDiffIdx
+          while (gitDiffAfter = gitDiffs[++diffIdx])
+            gitBeg = Math.min gitDiffAfter.newStart + @maxGitGap, gitDiffs.length - 1
+            if gitBeg < gitEnd then gitEnd = gitDiffAfter.newStart + gitDiffAfter.newLines
+            else break
+          break
+      if gitStrt and (usingGit = (gitStrt <= @initPos[0] <= gitEnd and
+                                  gitStrt <= @lastPos[0] <= gitEnd))
+          @initPos = [gitStrt-1, 0]
+          @lastPos = [gitEnd-1,  0]
+    @setSelectedBufferRange()
+    newText = @editor.getText()
+    oldText = if usingGit
+      fileText = @fs.readFileSync @filePath
+      @gitRepo.checkoutHead @filePath
+      gitHeadText = @fs.readFileSync @filePath
+      @fs.writeFileSync @filePath, fileText
+      gitHeadText.toString()
+    else if @haveLiveArchive
+      @load.text(@projPath, @filePath, -2).text
+    else
+      "No matching git repo or Live-Archive text found."
+      
+    console.log 'haveSelLines', usingGit, {@initPos, @lastPos, newText, oldText}
+      
   handleEvents: ->
     @editorView.on      'mousedown', '.line', (e) => @mousedown e
     @editorView.on      'mousemove',          (e) => @mousemove e
