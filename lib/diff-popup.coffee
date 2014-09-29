@@ -1,5 +1,6 @@
-### 2
- lib\diff-popup.coffee
+###
+    lib\diff-popup.coffee
+    line 2
 ###
 
 {$} = require 'atom'
@@ -87,7 +88,7 @@ module.exports =
     @calcSel()
     
   chkOrder: ->
-    if @initPos[0] <= @lastPos[0] - 1
+    if @initPos[0] < @lastPos[0]
       [@initPos, @lastPos]
     else
       [[@lastPos[0]-1,0], [@initPos[0]+1, 0]]
@@ -99,7 +100,7 @@ module.exports =
     top = $lineNum.index $lineNum.filter \
   	       '[data-buffer-row="' + range[0][0] + '"]'
     bot = $lineNum.index $lineNum.filter \
-          '[data-buffer-row="' + range[1][0] + '"]'
+           '[data-buffer-row="' + range[1][0] + '"]'
     $lineNum.slice top, bot
             .find '.icon-right'
             .addClass 'diff-pop-hilite'
@@ -119,13 +120,13 @@ module.exports =
     lfRegex = new RegExp '\\n', 'g'
     @gitHeadTextLines = []
     while (match = lfRegex.exec gitHeadText) 
-      @gitHeadTextLines.push gitHeadText[lastLastIndex..lfRegex.lastIndex]
+      @gitHeadTextLines.push gitHeadText[lastLastIndex...lfRegex.lastIndex]
       lastLastIndex = lfRegex.lastIndex
     console.log 'getGitHeadTextLines', @gitHeadTextLines.length
     true
     
   addDiffText: (diffLineNums, after = yes) ->
-    strt = diffLineNums.oldStart
+    strt = diffLineNums.oldStart-1
     end  = strt + diffLineNums.oldLines
     lines = @gitHeadTextLines[strt...end]
     if after
@@ -142,31 +143,30 @@ module.exports =
       gitRegionStart = null
       gitDiffs = @gitRepo.getLineDiffs @filePath, @editor.getText()
       for gitDiff, centerDiffIdx in gitDiffs
-        gitRegionStart = gitDiff.newStart
+        gitRegionStart = gitDiff.newStart - 1
         gitRegionEnd   = gitRegionStart + gitDiff.newLines
-        gitMatch = (gitRegionStart - @maxGitGap <= top <= gitRegionEnd + @maxGitGap)
+        gitMatch = (gitRegionStart <= top < gitRegionEnd)
         if gitMatch and @getGitHeadTextLines()
           @addDiffText gitDiff
           diffIdx = centerDiffIdx
           while (gitDiffBefore = gitDiffs[--diffIdx])
-            gitBot = gitDiffBefore.newStart + gitDiffBefore.newLines
-            gitBot = Math.max gitBot - @maxGitGap, 0
+            gitBot = gitDiffBefore.newStart - 1 + gitDiffBefore.newLines + @maxGitGap
             if gitBot >= gitRegionStart 
               @addDiffText gitDiffBefore, no
-              gitRegionStart = gitDiffBefore.newStart
+              gitRegionStart = gitDiffBefore.newStart - 1
             else break
           diffIdx = centerDiffIdx
           while (gitDiffAfter = gitDiffs[++diffIdx])
-            gitBeg = Math.min gitDiffAfter.newStart + @maxGitGap, gitDiffs.length - 1
-            if gitBeg < gitRegionEnd 
+            gitTop = gitDiffAfter.newStart - 1 - @maxGitGap
+            if gitTop <= gitRegionEnd 
               @addDiffText gitDiffAfter
-              gitRegionEnd = gitDiffAfter.newStart + gitDiffAfter.newLines
+              gitRegionEnd = gitDiffAfter.newStart - 1 + gitDiffAfter.newLines
             else break
           break
-      if gitRegionStart and (@usingGit = (gitRegionStart <= @initPos[0] <= gitRegionEnd and
-                                          gitRegionStart <= @lastPos[0] <= gitRegionEnd))
-          @initPos = [gitRegionStart-1, 0]
-          @lastPos = [gitRegionEnd-1,   0]
+      if gitRegionStart? and (@usingGit = (gitRegionStart <= @initPos[0] <  gitRegionEnd and
+                                           gitRegionStart <  @lastPos[0] <= gitRegionEnd))
+          @initPos = [gitRegionStart, 0]
+          @lastPos = [gitRegionEnd,   0]
     @setSelectedBufferRange()
     @getDiff()
     console.log 'calcSel', @usingGit, {@initPos, @lastPos, @diffTextLines}
