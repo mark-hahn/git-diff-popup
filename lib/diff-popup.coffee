@@ -9,14 +9,13 @@ module.exports =
   configDefaults:
     maximumLinesInGitGap: 3
   
+  activeMousedown: (e) =>
+    if e.altKey and e.ctrlKey
+      if not @delayActivated then @delayedActivate()
+      @mousedown e
+
   activate: ->
     @$itemViews = atom.workspaceView.find '.item-views'
-    
-    @activeMousedown = (e) =>
-      if e.altKey and e.ctrlKey
-        if not @delayActivated then @delayedActivate()
-        @mousedown e
-
     @$itemViews.on 'mousedown', '.editor .line', (e) => @activeMousedown e
       
     atom.workspaceView.command "diff-popup:toggle", => 
@@ -28,7 +27,7 @@ module.exports =
       @initPos = [range.start.row, 0]
       @lastPos = [range.end.row+1, 0]
       @setSelectedBufferRange()
-      @haveSelLines()
+      @calcSel()
     
   delayedActivate: ->
     @fs       = require 'fs'
@@ -85,7 +84,7 @@ module.exports =
     line = @lineFromPageY(e.pageY) + 1
     @lastPos = [line, 0]
     @setSelectedBufferRange()
-    @haveSelLines()
+    @calcSel()
     
   chkOrder: ->
     if @initPos[0] <= @lastPos[0] - 1
@@ -105,47 +104,82 @@ module.exports =
             .find '.icon-right'
             .addClass 'diff-pop-hilite'
   
-  haveSelLines: ->
+  getGitHeadTextLines: ->
+    bufText = @editor.getText()
+    chkoutOk = yes
+    try
+      chkoutOk = @gitRepo.checkoutHead @filePath
+      gitHeadText = @fs.readFileSync(@filePath).toString()
+    catch e
+      chkoutOk = no
+    @fs.writeFileSync @filePath, bufText
+    if not chkoutOk then return no
+    lines = []
+    lastLastIndex = 0
+    lfRegex = new RegExp '\\n', 'g'
+    @gitHeadTextLines = []
+    while (match = lfRegex.exec gitHeadText) 
+      @gitHeadTextLines.push gitHeadText[lastLastIndex..lfRegex.lastIndex]
+      lastLastIndex = lfRegex.lastIndex
+    console.log 'getGitHeadTextLines', @gitHeadTextLines.length
+    true
+    
+  addDiffText: (diffLineNums, after = yes) ->
+    strt = diffLineNums.oldStart
+    end  = strt + diffLineNums.oldLines
+    lines = @gitHeadTextLines[strt...end]
+    if after
+      @diffTextLines = @diffTextLines.concat lines
+    else
+      @diffTextLines = lines.concat @diffTextLines
+    console.log 'addDiffText', {strt, end, lines}
+      
+  calcSel: ->
     [[top, nil], [bot, nil]] = @chkOrder()
-    usingGit = no
+    @usingGit = no
+    @diffTextLines = []
     if @gitRepo and @gitRepo.isPathModified @filePath
-      gitStrt = null
+      gitRegionStart = null
       gitDiffs = @gitRepo.getLineDiffs @filePath, @editor.getText()
       for gitDiff, centerDiffIdx in gitDiffs
-        gitStrt  = gitDiff.newStart
-        gitEnd   = gitStrt + gitDiff.newLines
-        gitMatch = (gitStrt - @maxGitGap <= top < gitEnd + @maxGitGap)
-        if gitMatch
+        gitRegionStart = gitDiff.newStart
+        gitRegionEnd   = gitRegionStart + gitDiff.newLines
+        gitMatch = (gitRegionStart - @maxGitGap <= top <= gitRegionEnd + @maxGitGap)
+        if gitMatch and @getGitHeadTextLines()
+          @addDiffText gitDiff
           diffIdx = centerDiffIdx
           while (gitDiffBefore = gitDiffs[--diffIdx])
             gitBot = gitDiffBefore.newStart + gitDiffBefore.newLines
             gitBot = Math.max gitBot - @maxGitGap, 0
-            if gitBot >= gitStrt then gitStrt = gitDiffBefore.newStart
+            if gitBot >= gitRegionStart 
+              @addDiffText gitDiffBefore, no
+              gitRegionStart = gitDiffBefore.newStart
             else break
           diffIdx = centerDiffIdx
           while (gitDiffAfter = gitDiffs[++diffIdx])
             gitBeg = Math.min gitDiffAfter.newStart + @maxGitGap, gitDiffs.length - 1
-            if gitBeg < gitEnd then gitEnd = gitDiffAfter.newStart + gitDiffAfter.newLines
+            if gitBeg < gitRegionEnd 
+              @addDiffText gitDiffAfter
+              gitRegionEnd = gitDiffAfter.newStart + gitDiffAfter.newLines
             else break
           break
-      if gitStrt and (usingGit = (gitStrt <= @initPos[0] <= gitEnd and
-                                  gitStrt <= @lastPos[0] <= gitEnd))
-          @initPos = [gitStrt-1, 0]
-          @lastPos = [gitEnd-1,  0]
+      if gitRegionStart and (@usingGit = (gitRegionStart <= @initPos[0] <= gitRegionEnd and
+                                          gitRegionStart <= @lastPos[0] <= gitRegionEnd))
+          @initPos = [gitRegionStart-1, 0]
+          @lastPos = [gitRegionEnd-1,   0]
     @setSelectedBufferRange()
+    @getDiff()
+    console.log 'calcSel', @usingGit, {@initPos, @lastPos, @diffTextLines}
+    
+  getDiff: ->
     newText = @editor.getText()
-    oldText = if usingGit
-      fileText = @fs.readFileSync @filePath
-      @gitRepo.checkoutHead @filePath
-      gitHeadText = @fs.readFileSync @filePath
-      @fs.writeFileSync @filePath, fileText
-      gitHeadText.toString()
+    diffText = if @usingGit then @diffTextLines.join ''
     else if @haveLiveArchive
       @load.text(@projPath, @filePath, -2).text
     else
       "No matching git repo or Live-Archive text found."
       
-    console.log 'haveSelLines', usingGit, {@initPos, @lastPos, newText, oldText}
+    console.log 'getDiff', @usingGit, diffText
       
   handleEvents: ->
     @editorView.on      'mousedown', '.line', (e) => @mousedown e
