@@ -1,6 +1,5 @@
 ###
-    lib\diff-popup.coffee
-    line 2
+  lib\diff-popup.coffee
 ###
 
 {$} = require 'atom'
@@ -31,9 +30,9 @@ module.exports =
       @calcSel()
     
   delayedActivate: ->
-    @fs       = require 'fs'
-    @pathUtil = require 'path'
-    {@load}   = require 'text-archive-engine'
+    @fs           = require 'fs'
+    @pathUtil     = require 'path'
+    {@load,@save} = require 'text-archive-engine'
     
     @editorView      = atom.workspaceView.getActiveView()
     @editor          = @editorView.getModel()
@@ -44,7 +43,7 @@ module.exports =
     @gitRepo         = atom.project.getRepo()
     @maxGitGap       = atom.config.get 'diff-popup.maximumLinesInGitGap'
     
-    console.log 'delayedActivate', {@gitRepo, @haveLiveArchive}
+    # console.log 'delayedActivate', {@gitRepo, @haveLiveArchive}
     
     if not @haveGitRepo and not @haveLiveArchive
         atom.confirm
@@ -106,6 +105,7 @@ module.exports =
             .addClass 'diff-pop-hilite'
   
   getGitHeadTextLines: ->
+    # gitHeadText = atom.project.getRepo().repo.getHeadBlob @filePath
     bufText = @editor.getText()
     chkoutOk = yes
     try
@@ -139,7 +139,7 @@ module.exports =
     [[top, nil], [bot, nil]] = @chkOrder()
     @usingGit = no
     @diffTextLines = []
-    if @gitRepo and @gitRepo.isPathModified @filePath
+    if @gitRepo and atom.project.getRepo().isPathModified @filePath
       gitRegionStart = null
       gitDiffs = @gitRepo.getLineDiffs @filePath, @editor.getText()
       for gitDiff, centerDiffIdx in gitDiffs
@@ -171,11 +171,26 @@ module.exports =
     @getDiff()
     console.log 'calcSel', @usingGit, {@initPos, @lastPos, @diffTextLines}
     
+  getPosForLineNum: (text, lineNum) ->
+    lfRegex = new RegExp '\\n', 'g'
+    num = lastlLastIndex = 0
+    while (match = lfRegex.exec text)
+      if num++ is lineNum
+        return lastlLastIndex
+      lastlLastIndex = lfRegex.lastIndex
+    if num is lineNum
+      return lastlLastIndex
+    text.length
+      
   getDiff: ->
-    newText = @editor.getText()
     diffText = if @usingGit then @diffTextLines.join ''
     else if @haveLiveArchive
-      @load.text(@projPath, @filePath, -2).text
+      oldText = @load.text(@projPath, @filePath, -2).text
+      newText = @editor.getText()
+      posIn   = [@getPosForLineNum(newText, @initPos[0]), 
+                 @getPosForLineNum(newText, @lastPos[0])]
+      [topPos, botPos] = @save.trackPos newText, oldText, posIn
+      oldText[topPos...botPos]
     else
       "No matching git repo or Live-Archive text found."
       
