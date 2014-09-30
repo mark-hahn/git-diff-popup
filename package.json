@@ -8,7 +8,7 @@
   "engines": {
     "atom": ">=0.127.0"
   },
-  "activationEvents": ["diff-popup:toggle"],
+  "activationEvents": ["diff-popup:open"],
   "dependencies": {
     "underscore-plus":   ">=1.5.1",
     "underscore.string": ">=2.3.0",

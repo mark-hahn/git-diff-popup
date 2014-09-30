@@ -7,70 +7,38 @@
 module.exports = 
 class Diff
   
-  constructor: (@diffPopup, @editorView, @editor) ->
-    {@projPath, @archiveDir, @haveLiveArchive, @gitRepo,
-    @fs, @PopupView, @archiveDir, @maxGitGap, @load, @save} = @diffPopup
+  constructor: (@diffPopup) ->
+    {@projPath, @archiveDir, @haveLiveArchive, @gitRepo} = @diffPopup
+    
+    @editorView = atom.workspaceView.getActiveView()
+    if not (@editor = @editorView?.getEditor?())
+      console.log 'diff-popup: no editor in this tab'
+      return
     @filePath = @editor.getPath()
-    @handleEvents()
-    @toggle()
     
-  toggle: ->
-      if @diffView?.hasParent() then @close(); return
-      @mouseIsDown = no
-      range  = @editor.getLastSelection().getBufferRange()
-      @noSelection = range.isEmpty()
-      @initPos = [range.start.row, 0]
-      @lastPos = [range.end.row+1, 0]
-      @setSelectedBufferRange()
-      @calcSel()
-    
-  lineFromPageY: (pageY) ->
-    ofs = @editorView.scrollView.offset()
-    top = pageY - ofs.top + @editorView.scrollTop()
-    row = Math.floor  top / @editorView.lineHeight
-    @editor.bufferPositionForScreenPosition([row, 0]).row
-    
-  mousedown: (e) ->
-    if not e.altKey or not e.ctrlKey then @mouseIsDown = no; return
-    if @diffView?.hasParent() then @close(); return
-    @mouseIsDown = yes
-    @noSelection = yes
-    line = @lineFromPageY e.pageY
-    @initPos = [line,   0] 
-    @lastPos = [line+1, 0]
-    @setSelectedBufferRange()
-  
-  mousemove: (e) ->
-    if not @mouseIsDown then return
-    @noSelection = no
-    @lastPos = [@lineFromPageY(e.pageY)+1, 0]
-    @setSelectedBufferRange()
-  
-  mouseup: (e) ->
-    if not @mouseIsDown then return
-    @mouseIsDown = no
-    line = @lineFromPageY(e.pageY) + 1
-    @lastPos = [line, 0]
+    @fs           = require 'fs'
+    @PopupView    = require './popup-view'
+    @archiveDir   = @projPath + '/.live-archive'
+    @maxGitGap    = atom.config.get 'diff-popup.maximumLinesInGitGap'
+    {@load,@save} = require 'text-archive-engine'
+
+    range        = @editor.getLastSelection().getBufferRange()
+    @noSelection = range.isEmpty()
+    @topSelRow   = range.start.row
+    @botSelRow   = range.end.row + 1
     @setSelectedBufferRange()
     @calcSel()
     
-  chkOrder: ->
-    if @initPos[0] < @lastPos[0]
-      [@initPos, @lastPos]
-    else
-      [[@lastPos[0]-1,0], [@initPos[0]+1, 0]]
-        
   setSelectedBufferRange: ->
-    range = @chkOrder()
-    $lineNum = @editorView.find '.gutter .line-number'
-    $lineNum.find('.icon-right').removeClass 'diff-pop-hilite'
-    top = $lineNum.index $lineNum.filter \
-  	       '[data-buffer-row="' + range[0][0] + '"]'
-    bot = $lineNum.index $lineNum.filter \
-           '[data-buffer-row="' + range[1][0] + '"]'
-    $lineNum.slice top, bot
-            .find '.icon-right'
-            .addClass 'diff-pop-hilite'
+    $lineNums = @editorView.find '.gutter .line-number'
+    $lineNums.find('.icon-right').removeClass 'diff-pop-hilite'
+    top = $lineNums.index $lineNums.filter \
+  	       '[data-buffer-row="' + @topSelRow + '"]'
+    bot = $lineNums.index $lineNums.filter \
+           '[data-buffer-row="' + @botSelRow + '"]'
+    $lineNums.slice top, bot
+             .find '.icon-right'
+             .addClass 'diff-pop-hilite'
   
   getGitHeadTextLines: ->
     # gitHeadText = atom.project.getRepo().repo.getHeadBlob @filePath
@@ -104,7 +72,6 @@ class Diff
     console.log 'addDiffText', {strt, end, lines}
       
   calcSel: ->
-    [[top, nil], [bot, nil]] = @chkOrder()
     @usingGit = no
     @diffTextLines = []
     if @gitRepo and atom.project.getRepo().isPathModified @filePath
@@ -113,7 +80,7 @@ class Diff
       for gitDiff, centerDiffIdx in gitDiffs
         gitRegionStart = gitDiff.newStart - 1
         gitRegionEnd   = gitRegionStart + gitDiff.newLines
-        gitMatch = (gitRegionStart <= top < gitRegionEnd)
+        gitMatch = (gitRegionStart <= @topSelRow < gitRegionEnd)
         if gitMatch and @getGitHeadTextLines()
           @addDiffText gitDiff
           diffIdx = centerDiffIdx
@@ -131,13 +98,13 @@ class Diff
               gitRegionEnd = gitDiffAfter.newStart - 1 + gitDiffAfter.newLines
             else break
           break
-      if gitRegionStart? and (@usingGit = (gitRegionStart <= @initPos[0] <  gitRegionEnd and
-                                           gitRegionStart <  @lastPos[0] <= gitRegionEnd))
-          @initPos = [gitRegionStart, 0]
-          @lastPos = [gitRegionEnd,   0]
+      if gitRegionStart? and (@usingGit = (gitRegionStart <= @topSelRow <  gitRegionEnd and
+                                           gitRegionStart <  @botSelRow <= gitRegionEnd))
+          @topSelRow = gitRegionStart
+          @botSelRow = gitRegionEnd
     @setSelectedBufferRange()
     @getDiff()
-    console.log 'calcSel', @usingGit, {@initPos, @lastPos, @diffTextLines}
+    console.log 'calcSel', @usingGit, {@topSelRow, @botSelRow, @diffTextLines}
     
   getPosForLineNum: (text, lineNum) ->
     lfRegex = new RegExp '\\n', 'g'
@@ -155,21 +122,15 @@ class Diff
     else if @haveLiveArchive
       oldText = @load.text(@projPath, @filePath, -2).text
       newText = @editor.getText()
-      posIn   = [@getPosForLineNum(newText, @initPos[0]), 
-                 @getPosForLineNum(newText, @lastPos[0])]
+      posIn   = [@getPosForLineNum(newText, @topSelRow), 
+                 @getPosForLineNum(newText, @botSelRow)]
       [topPos, botPos] = @save.trackPos newText, oldText, posIn
       oldText[topPos...botPos]
     else
       "No matching git repo or Live-Archive text found."
     @diffView = new @PopupView @editorView, diffText
       
-  handleEvents: ->
-    @editorView.on      'mousedown', '.line', (e) => @mousedown e
-    @editorView.on      'mousemove',          (e) => @mousemove e
-    @editorView.on        'mouseup',          (e) => @mouseup   e
-    atom.workspaceView.on 'mouseup',          (e) => @mouseup   e
-    
   close: ->
     @diffView?.destroy()
-    @mouseIsDown = @initPos = @lastPos = null
+    @mouseIsDown = @topSelRow = @botSelRow = null
     

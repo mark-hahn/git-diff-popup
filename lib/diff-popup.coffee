@@ -8,9 +8,9 @@ module.exports =
     maximumLinesInGitGap: 3
   
   activate: ->
-    @fs  = require 'fs'
     Diff = require './diff'
     
+    @fs              = require 'fs'
     @projPath        = atom.project.getRootDirectory().path
     @archiveDir      = @projPath + '/.live-archive'
     @haveLiveArchive = @fs.existsSync @archiveDir
@@ -23,15 +23,5 @@ module.exports =
       	                 'an enabled Live-Archive to use the Diff-Popup package.'
         buttons: OK: -> return
     
-    @PopupView    = require './popup-view'
-    @archiveDir   = @projPath + '/.live-archive'
-    @maxGitGap    = atom.config.get 'diff-popup.maximumLinesInGitGap'
-    {@load,@save} = require 'text-archive-engine'
-
-    atom.workspaceView.command "diff-popup:toggle", =>
-      if not (editorView = atom.workspaceView.getActiveView()) or
-         not (editor = editorView.getModel()) then return
-
-      if (diff = editor.diffPopup) then diff.toggle()
-      else editor.diffPopup = new Diff @, editorView, editor
+    atom.workspaceView.command "diff-popup:open", => new Diff @
       
