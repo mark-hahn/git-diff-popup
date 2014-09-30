@@ -1,8 +1,45 @@
 
 @import "ui-variables";
-
+@import "octicon-utf-codes";
+@import "octicon-mixins";
+	
 .editor .gutter .line-number .icon-right.diff-pop-hilite:before {
   visibility: visible;
-  // content:    "\f09e";
   content:    "\f05e";
+}
+ 
+.workspace .diff-popup {
+  position:     absolute;
+	width:				auto;
+  margin:       0;
+	left: 				auto;
+	top: 					auto;
+	right: 				auto;
+	bottom: 			auto;
+  right:        20px; 
+  bottom:       40px; 
+  
+  .diff-popup-toolbar {
+		
+		.diff-popup-collapse {
+			display:inline-block;
+			width: 20px;
+	    .octicon(fold, 1.5em);
+		}
+		.diff-popup-close {
+			display:inline-block;
+			width: 20px;
+	    .octicon(unfold, 1.5em);
+		}
+  }
+  .diff-text-outer {
+		display:	inline-block;
+    position: relative;
+    overflow: auto;
+    width:    100%;
+    
+    .diff-text {
+			display: inline-block;
+    }
+  }
 }
