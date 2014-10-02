@@ -1,45 +1,93 @@
 
 @import "ui-variables";
-@import "octicon-utf-codes";
-@import "octicon-mixins";
-	
+
 .editor .gutter .line-number .icon-right.diff-pop-hilite:before {
   visibility: visible;
   content:    "\f05e";
 }
- 
+
 .workspace .diff-popup {
   position:     absolute;
 	width:				auto;
   margin:       0;
 	left: 				auto;
-	top: 					auto;
-	right: 				auto;
-	bottom: 			auto;
-  right:        20px; 
-  bottom:       40px; 
+	top: 					60px;
+  right:        40px; 
+  bottom:       auto; 
   
   .diff-popup-toolbar {
-		
-		.diff-popup-collapse {
-			display:inline-block;
-			width: 20px;
-	    .octicon(fold, 1.5em);
-		}
-		.diff-popup-close {
-			display:inline-block;
-			width: 20px;
-	    .octicon(unfold, 1.5em);
-		}
+    position:relative;
+    top: -1em;
+    height: 0.5em;
+    user-select: none;
+    
+    .drag-bkgd {
+      width: 100%;
+      height: 1px;
+      margin-top: 3px;
+      background-color:  rgba(128,128,128,0.5);
+      :before {
+  	    // content: "\f05e";
+      }
+    }
+    
+    .btns {
+      position: absolute;
+      top:   -0.3em;
+      right:  0.0em;
+      
+      width: 21em;
+    
+      .btn {
+        position: relative;
+        margin-left: .5em;
+        height: 1.2em;
+        line-height: 1.3em;
+        font-family: "fontello";
+        font-style: normal;
+        font-weight: normal;
+        font-variant: normal;
+        text-transform: none;
+        font-size: 120%;
+      }
+    }
   }
+  
   .diff-text-outer {
-		display:	inline-block;
     position: relative;
+    clear: both;
+    float:left;
+		display:	inline-block;
     overflow: auto;
-    width:    100%;
     
     .diff-text {
 			display: inline-block;
     }
   }
 }
+
+@font-face {
+  font-family: 'fontello';
+  src: url('atom://diff-popup/font/fontello.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.diff-popup .diff-popup-toolbar .icon-git:before { content: '\e800'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-reply:before { content: '\e801'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-cancel:before { content: '\e802'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-right-big:before { content: '\e803'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-left-big:before { content: '\e804'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-play:before { content: '\e805'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-history:before { content: '\e806'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-right-open:before { content: '\e807'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-left-open:before { content: '\e808'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-cancel-circled:before { content: '\e809'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-docs:before { content: '\e80a'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-angle-circled-left:before { content: '\e80b'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-angle-circled-right:before { content: '\e80c'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-right-circled:before { content: '\e80d'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-left-circled:before { content: '\e80e'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-fork:before { content: '\e80f'; } /* '' */
+.diff-popup .diff-popup-toolbar .icon-git-squared:before { content: '\e810'; } /* '' */
+

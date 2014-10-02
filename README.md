@@ -1,10 +1,14 @@
 diff-popup
 ==========
 
-Atom editor package to show Git or Live-Archive diffs in editor with one click.
+Atom editor package to easily show one Git diff in a pop-up.
 
+# to-do
+  popup layout
+  toolbar
+  scan for previous change
 
 # bugs
 - fold breaks selection icons
-- cannot switch tabs
-- can't see deleted lines
+
+font\fontello.woff
