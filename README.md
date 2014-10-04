@@ -10,5 +10,3 @@ Atom editor package to easily show one Git diff in a pop-up.
 
 # bugs
 - fold breaks selection icons
-
-font\fontello.woff

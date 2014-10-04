@@ -1,2 +1,2 @@
 '.editor:not(.mini)':
-  'ctrl-alt-d': 'diff-popup:open'
+  'ctrl-alt-d': 'diff-popup:toggle'

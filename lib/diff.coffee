@@ -12,7 +12,7 @@ class Diff
     
     @editorView = atom.workspaceView.getActiveView()
     if not (@editor = @editorView?.getEditor?())
-      console.log 'diff-popup: no editor in this tab'
+      # console.log 'diff-popup: no editor in this tab'
       return
     @filePath = @editor.getPath()
     
@@ -26,20 +26,16 @@ class Diff
     @noSelection = range.isEmpty()
     @topSelRow   = range.start.row
     @botSelRow   = range.end.row + 1
-    @setSelectedBufferRange()
-    @calcSel()
-    
-  setSelectedBufferRange: ->
+    @expandGitSelection()
+    @addHilitesToSelection()
+
+  addHilitesToSelection: ->
     $lineNums = @editorView.find '.gutter .line-number'
-    $lineNums.find('.icon-right').removeClass 'diff-pop-hilite'
-    top = $lineNums.index $lineNums.filter \
-  	       '[data-buffer-row="' + @topSelRow + '"]'
-    bot = $lineNums.index $lineNums.filter \
-           '[data-buffer-row="' + @botSelRow + '"]'
-    $lineNums.slice top, bot
-             .find '.icon-right'
-             .addClass 'diff-pop-hilite'
-  
+    $lineNums.find('.icon-right').removeClass 'dif-pop-marker'
+    for lineNum in [@topSelRow...@botSelRow]
+      $lineNums.filter('[data-buffer-row="' + lineNum + '"]').find('.icon-right').addClass 'dif-pop-marker'
+    null
+      
   getGitHeadTextLines: ->
     # gitHeadText = atom.project.getRepo().repo.getHeadBlob @filePath
     bufText = @editor.getText()
@@ -58,7 +54,7 @@ class Diff
     while (match = lfRegex.exec gitHeadText) 
       @gitHeadTextLines.push gitHeadText[lastLastIndex...lfRegex.lastIndex]
       lastLastIndex = lfRegex.lastIndex
-    console.log 'getGitHeadTextLines', @gitHeadTextLines.length
+    # console.log 'getGitHeadTextLines', @gitHeadTextLines.length
     true
     
   addDiffText: (diffLineNums, after = yes) ->
@@ -69,12 +65,12 @@ class Diff
       @diffTextLines = @diffTextLines.concat lines
     else
       @diffTextLines = lines.concat @diffTextLines
-    console.log 'addDiffText', {strt, end, lines}
+    # console.log 'addDiffText', {strt, end, lines}
       
-  calcSel: ->
+  expandGitSelection: ->
     @usingGit = no
     @diffTextLines = []
-    if @gitRepo and atom.project.getRepo().isPathModified @filePath
+    if @noSelection and @gitRepo and atom.project.getRepo().isPathModified @filePath
       gitRegionStart = null
       gitDiffs = @gitRepo.getLineDiffs @filePath, @editor.getText()
       for gitDiff, centerDiffIdx in gitDiffs
@@ -98,13 +94,12 @@ class Diff
               gitRegionEnd = gitDiffAfter.newStart - 1 + gitDiffAfter.newLines
             else break
           break
-      if gitRegionStart? and (@usingGit = (gitRegionStart <= @topSelRow <  gitRegionEnd and
-                                           gitRegionStart <  @botSelRow <= gitRegionEnd))
+      if (@usingGit = gitRegionStart?)
           @topSelRow = gitRegionStart
           @botSelRow = gitRegionEnd
-    @setSelectedBufferRange()
+    @addHilitesToSelection()
     @getDiff()
-    console.log 'calcSel', @usingGit, {@topSelRow, @botSelRow, @diffTextLines}
+    # console.log 'expandGitSelection', @usingGit, {@topSelRow, @botSelRow, @diffTextLines}
     
   getPosForLineNum: (text, lineNum) ->
     lfRegex = new RegExp '\\n', 'g'
@@ -128,9 +123,53 @@ class Diff
       oldText[topPos...botPos]
     else
       "No matching git repo or Live-Archive text found."
-    @diffView = new @PopupView @editorView, diffText
+    @diffView = new @PopupView @, diffText
+    
+  findDiff: ->
+    if ($diffHilites = atom.workspaceView.find '.dif-pop-marker').length > 0 and
+       (editorView = $diffHilites.eq(0).closest('.editor').view()).is(':visible') and
+       (textEditor = editorView.getModel())
+          rowNum = null
+          $diffHilites.each ->
+            diffRowNum = +$(@).closest('.line-number').attr 'data-screen-row'
+            rowNum ?= diffRowNum
+            if rowNum++ isnt diffRowNum then rowNum = 'err'; return false
+          if rowNum is 'err' then return {}
+          frstRow = $diffHilites.first().closest('.line-number').attr('data-screen-row') - 1
+          lastRow = $diffHilites.last() .closest('.line-number').attr('data-screen-row') - 1
+          {editorView, textEditor, frstRow, lastRow}
+    else {}
+    
+  getDiffBox: ->
+    {editorView, frstRow, lastRow} = @findDiff()
+    $scrollView = editorView.find '.scroll-view'
+    {left:svLft, top:svTop} = $scrollView.offset() 
+    svRgt       = svLft + $scrollView.width()
+    svBot       = svTop + $scrollView.height()
+    $line       = editorView.find '.line[data-screen-row="' + (frstRow+1) + '"]'
+    {left, top} = $line.offset()
+    right       = left + $line.width()
+    bottom      = top  + (lastRow - frstRow + 1) * $line.height()
+    left        = Math.max svLft, left
+    top         = Math.max svTop, top
+    right       = Math.min svRgt, right
+    bottom      = Math.min svBot, bottom
+    {left, top, right, bottom}
+    
+  revert: (text) -> 
+    {textEditor, frstRow, lastRow} = @findDiff()
+    if textEditor
+      firstVis = textEditor.getFirstVisibleScreen()
+      lastVis  = textEditor.getLastVisibleScreen() 
+      if not (lastRow < firstVis or frstRow > lastVis)  
+        textEditor.setTextInBufferRange [[frstRow, 0], [lastRow+1, 0]], text
+        return
+    atom.confirm
+      message: '--- Diff-Popup Error ---\n\n'
+      detailedMessage: 'Unable to revert text. ' +
+    	                 'The difference text is not contiguous or not visible in the tab.'
+      buttons: OK: -> return
       
   close: ->
     @diffView?.destroy()
-    @mouseIsDown = @topSelRow = @botSelRow = null
-    
+    @diffPopup.diffClosed()

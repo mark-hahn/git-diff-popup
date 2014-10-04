@@ -1,23 +1,23 @@
 
 @import "ui-variables";
 
-.editor .gutter .line-number .icon-right.diff-pop-hilite:before {
+.editor .gutter .line-number .icon-right.dif-pop-marker:before {
   visibility: visible;
   content:    "\f05e";
 }
 
 .workspace .diff-popup {
+  visibility:   hidden;
   position:     absolute;
 	width:				auto;
   margin:       0;
-	left: 				auto;
-	top: 					60px;
-  right:        40px; 
-  bottom:       auto; 
+	left: 				0;
+	top: 					0;
   
   .diff-popup-toolbar {
     position:relative;
     top: -1em;
+    left: 0.2em;
     height: 0.5em;
     user-select: none;
     
@@ -26,9 +26,7 @@
       height: 1px;
       margin-top: 3px;
       background-color:  rgba(128,128,128,0.5);
-      :before {
-  	    // content: "\f05e";
-      }
+      user-select: none;
     }
     
     .btns {
@@ -57,6 +55,9 @@
     position: relative;
     clear: both;
     float:left;
+    min-width: 280px;
+    min-height: 40px;
+    
 		display:	inline-block;
     overflow: auto;
     

@@ -5,7 +5,7 @@
 module.exports = 
 
   configDefaults:
-    maximumLinesInGitGap: 3
+    maximumLinesInGitGap: 2
   
   activate: ->
     Diff = require './diff'
@@ -23,5 +23,11 @@ module.exports =
       	                 'an enabled Live-Archive to use the Diff-Popup package.'
         buttons: OK: -> return
     
-    atom.workspaceView.command "diff-popup:open", => new Diff @
+    atom.workspaceView.command "diff-popup:toggle", => 
+      if @diff then @diff.close(); @diff = null
+      else @diff = new Diff @
+    
+  diffClosed: -> @diff = null
       
+  deactivate: -> @diff.close()
+  
