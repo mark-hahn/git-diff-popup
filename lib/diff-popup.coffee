@@ -4,9 +4,6 @@
 
 module.exports = 
 
-  configDefaults:
-    maximumLinesInGitGap: 2
-  
   activate: ->
     Diff = require './diff'
     

@@ -66,20 +66,33 @@ class PopupView extends View
       if e.which is 27 then @diff.close() 
   
   setViewPosDim: ->
-    $win = $ window
-    wW = $win.width()
-    wH = $win.height()
-    pW = Math.max 280, Math.min wW/2, @textOuter.width()
-    pH = Math.max  40, Math.min wH/2, @textOuter.height()
-    [width, height, left, top, right, bottom] = [pW, pH, 'auto', 40, 30, 'auto']
+    $win   = $ window
+    wW     = $win.width()
+    wH     = $win.height()
+    tW     = @textOuter.width()
+    tH     = @textOuter.height()
+    width  = Math.max 270, Math.min wW/2,  tW
+    height = Math.max  40, Math.min wH-40, tH
+    @textOuter.css {width, height}
+    
+    pW = width  + @width()  - tW + 22
+    pH = height + @height() - tH + 21 
     
     {left:dL, top:dT, right:dR, bottom:dB} = @diff.getDiffBox()
-    umW = dR - dL
-    urW = wW - dR
-    if pW < umW + urW and pH < dT
-      [left, top, right, bottom] = [dL, (dT-pH)/2, 'auto', 'auto']
-      
-    @textOuter.css {width, height}
+    dW = dR-dL
+    rW = wW-dR
+    if pW < dW+rW and pH < dT - 10
+      [left, top, right, bottom] = [dL+10,  dT-pH-10, 'auto', 'auto']
+    else if pW < dW+rW and pH < wH-dB
+      [left, top, right, bottom] = [dL+10,  dB+10, 'auto', 'auto']
+    else if pH < dT
+      [left, top, right, bottom] = ['auto', dT-pH-10, 20, 'auto']
+    else if pH < wH-dB
+      [left, top, right, bottom] = ['auto', dB+10, 20, 'auto']
+    else if pW < wW-40
+      [left, top, right, bottom] = ['auto', 20, 20, 'auto']
+    else if pW < bL
+      [left, top, right, bottom] = [20, 20, 'auto', 'auto']
     @css {left, top, right, bottom, visibility: 'visible'}
   
           
