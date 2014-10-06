@@ -21,14 +21,13 @@ class Diff
     @archiveDir   = @projPath + '/.live-archive'
     @maxGitGap    = atom.config.get 'diff-popup.maximumLinesInGitGap'
     {@load,@save} = require 'text-archive-engine'
-
+    
     range        = @editor.getLastSelection().getBufferRange()
     @topSelRow   = range.start.row
     @botSelRow   = range.end.row + 1
     @getSelection()
 
   getGitHeadText: ->
-    # gitHeadText = atom.project.getRepo().repo.getHeadBlob @filePath
     bufText = @editor.getText()
     chkoutOk = yes
     try
@@ -54,6 +53,7 @@ class Diff
     if @gitRepo and atom.project.getRepo().isPathModified @filePath
       gitDiffs = @gitRepo.getLineDiffs @filePath, @editor.getText()
       for gitDiff, centerDiffIdx in gitDiffs
+        if gitDiff.newLines is 0 then gitDiff.newStart++
         gitChunkNewTop = gitDiff.newStart - 1
         gitChunkNewBot = gitChunkNewTop + gitDiff.newLines
         if not (gitChunkNewTop > @botSelRow or gitChunkNewBot < @topSelRow) 
