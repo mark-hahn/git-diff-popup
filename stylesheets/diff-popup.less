@@ -10,9 +10,11 @@
   visibility:   hidden;
   position:     absolute;
 	width:				auto;
+	top: 					auto;
+  right:        auto;
+  bottom:       auto;
+	left: 				auto;
   margin:       0;
-	left: 				0;
-	top: 					0;
   
   .diff-popup-toolbar {
     position:relative;
@@ -33,12 +35,10 @@
       position: absolute;
       top:   -0.3em;
       right:  0.0em;
-      
-      width: 21em;
     
-      .btn {
+      .btn, .icon-git {
         position: relative;
-        margin-left: .5em;
+        margin-left: .2em;
         height: 1.2em;
         line-height: 1.3em;
         font-family: "fontello";
@@ -47,6 +47,9 @@
         font-variant: normal;
         text-transform: none;
         font-size: 120%;
+      }
+      .icon-git {
+        margin-right: 0.55em;
       }
     }
   }

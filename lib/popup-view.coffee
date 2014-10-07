@@ -10,9 +10,9 @@ class PopupView extends View
         @div class:'drag-bkgd', draggable:no
         @div class:'drag-bkgd', draggable:no
         @div outlet: 'btns', class: 'btns', =>
-          @span class:'btn icon-left-open'
-          @span class:'btn icon-git'
-          @span class:'btn icon-right-open'
+          @span outlet:'gitIcon', class:'icon-git'
+          @span class:'btn laIcons icon-left-open'
+          @span class:'btn laIcons icon-right-open'
           @span class:'btn icon-reply'
           @span class:'btn icon-docs'
           @span class:'btn icon-cancel'
@@ -20,7 +20,7 @@ class PopupView extends View
       @div outlet:'textOuter', class: 'diff-text-outer editor-colors', =>
         @pre outlet:'diffText', class: 'diff-text editor-colors', =>
 
-  initialize: (@diff, diffText) ->
+  initialize: (@diff, diffText, @isGitHead) ->
     @diffText.text diffText
     @appendTo atom.workspaceView
     process.nextTick => @setViewPosDim()
@@ -54,10 +54,10 @@ class PopupView extends View
     
     @subscribe @btns, 'click', (e) =>
       classes = $(e.target).attr 'class'
-      switch classes[9...]
-        when 'left-open'  then @diff.close()
-        when 'git'        then @diff.close()
-        when 'right-open' then @diff.close()
+      iconIdx = classes.indexOf 'icon-'
+      switch classes[iconIdx+5...]
+        when 'left-open'  then @diff.nextLA -1
+        when 'right-open' then @diff.nextLA +1
         when 'reply'      then @diff.revert diffText;         @diff.close()
         when 'docs'       then atom.clipboard.write diffText; @diff.close()
         when 'cancel'     then                                @diff.close()
@@ -91,14 +91,29 @@ class PopupView extends View
       [left, top, right, bottom] = ['auto', dB+10, 20, 'auto']
     else if pW < wW-40
       [left, top, right, bottom] = ['auto', 20, 20, 'auto']
-    else if pW < bL
+    else if pW < dL
       [left, top, right, bottom] = [20, 20, 'auto', 'auto']
     @css {left, top, right, bottom, visibility: 'visible'}
+    if @isGitHead
+      @gitIcon.css           display: 'inline-block'
+      @find('.laIcons').css  display: 'none'
+    else
+      @gitIcon.css           display: 'none'
+      @find('.laIcons').css  display: 'inline-block'
   
-          
+  setText: (diffText) ->
+    @diffText.text diffText
+    @css
+      visibility: 'hidden'
+      top: 				'auto';
+      right:      'auto';
+      bottom:     'auto';
+      left: 			'auto';
+    process.nextTick => @setViewPosDim()
+  
   destroy: ->
-    atom.workspaceView.find('.dif-pop-marker').removeClass 'dif-pop-marker'
     @detach()
     @unsubscribe()
     atom.workspaceView.find('.editor:visible').focus()
+    
     

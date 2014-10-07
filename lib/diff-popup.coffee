@@ -18,7 +18,8 @@ module.exports =
         message: '--- Diff-Popup Error ---\n\n'
         detailedMessage: 'This project must have either a Git repository or ' +
       	                 'an enabled Live-Archive to use the Diff-Popup package.'
-        buttons: OK: -> return
+        buttons: OK: -> 
+      return
     
     atom.workspaceView.command "diff-popup:toggle", => 
       if @diff then @diff.close(); @diff = null
