@@ -6,7 +6,7 @@
 
 module.exports = 
 class Diff
-  
+  test1: ->
   constructor: (@diffPopup) ->
     {@projPath, @archiveDir, @haveLiveArchive, @gitRepo} = @diffPopup
     
@@ -21,13 +21,10 @@ class Diff
     @archiveDir   = @projPath + '/.live-archive'
     @maxGitGap    = atom.config.get 'diff-popup.maximumLinesInGitGap'
     {@load,@save} = require 'text-archive-engine'
-    bufText       = @editor.getText()
     range         = @editor.getLastSelection().getBufferRange()
     @emptySel     = range.isEmpty()
     @topSelRow    = range.start.row
     @botSelRow    = range.end.row + 1
-    @topSelPos    = @lineNumPos bufText, @topSelRow
-    @botSelPos    = @lineNumPos bufText, @botSelRow
     @getSelection()
 
   getGitHeadText: ->
@@ -38,7 +35,7 @@ class Diff
       gitHeadText = @fs.readFileSync(@filePath).toString()
     catch e
       chkoutOk = no
-    @fs.writeFileSync @filePath, @bufText
+    @fs.writeFileSync @filePath, bufText
     if chkoutOk then return gitHeadText
     
   lineNumPos: (text, lineNum) ->
@@ -75,7 +72,7 @@ class Diff
         @gitSelOldBot += (@botSelRow - @gitSelNewBot)
         headText = @getGitHeadText()
         text = headText[@lineNumPos(headText, @gitSelOldTop) ... @lineNumPos(headText, @gitSelOldBot)]
-        @diffView = new @PopupView @, text, yes
+        @diffView = new @PopupView @, text, 0
         @setSelection()
         return
     @setSelection()
@@ -86,16 +83,18 @@ class Diff
         buttons: OK: -> 
       return
     @nextLA -1
-      
+    
   getLAText: (vers) ->
-    newText = @editor.getText()
-    laText  = @load.text(@projPath, @filePath, vers).text
-    [topPos, botPos] = @save.trackPos newText, laText, [@topSelPos, @botSelPos]
+    newText   = @editor.getText()
+    laText    = @load.text(@projPath, @filePath, vers).text
+    topSelPos = @lineNumPos newText, @topSelRow
+    botSelPos = @lineNumPos newText, @botSelRow
+    [topPos, botPos] = @save.trackPos newText, laText, [topSelPos, botSelPos]
     laText[topPos ... botPos]
 
-  showDiffView: (txt) ->
-    if not @diffView then @diffView = new @PopupView @, txt, no
-    else @diffView.setText txt
+  showDiffView: (txt, vers) ->
+    if not @diffView then @diffView = new @PopupView @, txt, vers
+    else @diffView.setText txt, vers
 
   nextLA: (delta) ->
     startVers = @lastLAVers ? -1
@@ -103,15 +102,16 @@ class Diff
       @lastLAVers =  (if not @lastLAVers? then -1 else @lastLAVers + delta)
       text = @getLAText @lastLAVers
       if text is '' or text not in [@editor.getSelectedText(), @lastLAText]
-        @showDiffView(@lastLAText = text)
+        @showDiffView (@lastLAText = text), @lastLAVers
         return
-      if (timedOut = (@lastLAVers % 5 is 0)) then break
+      if (timedOut = (@lastLAVers % 10 is 0)) then break
     @showDiffView """
       --- No Difference Found ---
-      No difference was found in the selection from version #{startVers} to version #{@lastLAVers}.
-      #{if timedOut then 'Use the nav arrows to try more versions.' else ''}
-    """
-
+      No difference was found in the selection from version #{-startVers} to version #{-@lastLAVers}.
+      #{if timedOut then 'Use the left arrow to try older versions.' else ''}
+    """, @lastLAVers, yes
+    @lastLAText = null
+    
   getDiffBox: ->
     sbr = @editor.getSelectedBufferRange()
     frstRow     = sbr.start.row

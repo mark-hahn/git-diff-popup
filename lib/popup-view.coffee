@@ -10,17 +10,18 @@ class PopupView extends View
         @div class:'drag-bkgd', draggable:no
         @div class:'drag-bkgd', draggable:no
         @div outlet: 'btns', class: 'btns', =>
-          @span outlet:'gitIcon', class:'icon-git'
-          @span class:'btn laIcons icon-left-open'
-          @span class:'btn laIcons icon-right-open'
-          @span class:'btn icon-reply'
-          @span class:'btn icon-docs'
-          @span class:'btn icon-cancel'
+          @span class:'show-git icon-git'
+          @span outlet:'laVersion', class:'show-ver show-msg la-version'
+          @span class:'btn show-ver show-msg icon-left-open'
+          @span class:'btn show-ver show-msg icon-right-open'
+          @span class:'btn show-git show-ver icon-reply'
+          @span class:'btn show-git show-ver icon-docs'
+          @span class:'btn show-git show-ver show-msg icon-cancel'
         
       @div outlet:'textOuter', class: 'diff-text-outer editor-colors', =>
         @pre outlet:'diffText', class: 'diff-text editor-colors', =>
 
-  initialize: (@diff, diffText, @isGitHead) ->
+  initialize: (@diff, diffText, @version, @showMsg) ->
     @diffText.text diffText
     @appendTo atom.workspaceView
     process.nextTick => @setViewPosDim()
@@ -30,14 +31,14 @@ class PopupView extends View
       @initLeft = pos.left; @initTop = pos.top
       @initPageX = e.pageX; @initPageY = e.pageY
       @dragging = yes
-      console.log 'mousedown', e.which, @dragging
+      # console.log 'mousedown', e.which, @dragging
       false
       
     @subscribe atom.workspaceView, 'mousemove', (e) =>
       if @dragging
         if e.which is 0 
           @dragging = no
-          console.log 'mousemove', e.which, @dragging
+          # console.log 'mousemove', e.which, @dragging
           return
         left = @initLeft + (e.pageX - @initPageX)
         top  = @initTop  + (e.pageY - @initPageY)
@@ -46,11 +47,11 @@ class PopupView extends View
       
     @subscribe @toolBar, 'mouseup',           (e) => 
       @dragging = no
-      console.log '@toolBar mouseup', e.which, @dragging
+      # console.log '@toolBar mouseup', e.which, @dragging
       
     @subscribe atom.workspaceView, 'mouseup', (e) => 
       @dragging = no
-      console.log 'workspaceView mouseup', e.which, @dragging
+      # console.log 'workspaceView mouseup', e.which, @dragging
     
     @subscribe @btns, 'click', (e) =>
       classes = $(e.target).attr 'class'
@@ -95,21 +96,24 @@ class PopupView extends View
       [left, top, right, bottom] = [20, 20, 'auto', 'auto']
     @css {left, top, right, bottom, visibility: 'visible'}
     
-    if @isGitHead
-      @gitIcon.css           display: 'inline-block'
-      @find('.laIcons').css  display: 'none'
-    else
-      @gitIcon.css           display: 'none'
-      @find('.laIcons').css  display: 'inline-block'
+    @laVersion.text 'v' + -@version
+    @btns.children().css display: 'none'
+    switch
+      when @showMsg      then @.find('.show-msg').css display: 'inline-block'
+      when @version is 0 then @.find('.show-git').css display: 'inline-block'
+      else                    @.find('.show-ver').css display: 'inline-block'
+        
+    # if @diffText.text() is ''
+    #   @find('.icon-left-open').css display: 'none'
   
-  setText: (diffText) ->
+  setText: (diffText, @version, @showMsg) ->
     @diffText.text diffText
     @css
       visibility: 'hidden'
-      top: 				'auto';
-      right:      'auto';
-      bottom:     'auto';
-      left: 			'auto';
+      top: 				'auto'
+      right:      'auto'
+      bottom:     'auto'
+      left: 			'auto'
     @textOuter.css width: 'auto', height: 'auto'
     process.nextTick => @setViewPosDim()
   
