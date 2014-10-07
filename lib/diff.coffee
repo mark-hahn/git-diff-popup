@@ -21,11 +21,13 @@ class Diff
     @archiveDir   = @projPath + '/.live-archive'
     @maxGitGap    = atom.config.get 'diff-popup.maximumLinesInGitGap'
     {@load,@save} = require 'text-archive-engine'
-    
-    range        = @editor.getLastSelection().getBufferRange()
-    @emptySel    = range.isEmpty()
-    @topSelRow   = range.start.row
-    @botSelRow   = range.end.row + 1
+    bufText       = @editor.getText()
+    range         = @editor.getLastSelection().getBufferRange()
+    @emptySel     = range.isEmpty()
+    @topSelRow    = range.start.row
+    @botSelRow    = range.end.row + 1
+    @topSelPos    = @lineNumPos bufText, @topSelRow
+    @botSelPos    = @lineNumPos bufText, @botSelRow
     @getSelection()
 
   getGitHeadText: ->
@@ -36,7 +38,7 @@ class Diff
       gitHeadText = @fs.readFileSync(@filePath).toString()
     catch e
       chkoutOk = no
-    @fs.writeFileSync @filePath, bufText
+    @fs.writeFileSync @filePath, @bufText
     if chkoutOk then return gitHeadText
     
   lineNumPos: (text, lineNum) ->
@@ -57,7 +59,7 @@ class Diff
   getSelection: ->
     if @gitRepo and atom.project.getRepo().isPathModified @filePath
       gitDiffs = @gitRepo.getLineDiffs @filePath, @editor.getText()
-      for gitDiff, centerDiffIdx in gitDiffs
+      for gitDiff in gitDiffs
         if gitDiff.newLines is 0 then gitDiff.newStart++
         gitChunkNewTop = gitDiff.newStart - 1
         gitChunkNewBot = gitChunkNewTop + gitDiff.newLines
@@ -72,9 +74,8 @@ class Diff
         @gitSelOldTop -= (@gitSelNewTop - @topSelRow)
         @gitSelOldBot += (@botSelRow - @gitSelNewBot)
         headText = @getGitHeadText()
-        @gitText = 
-          headText[@lineNumPos(headText, @gitSelOldTop) ... @lineNumPos(headText, @gitSelOldBot)]
-        @diffView = new @PopupView @, @gitText, yes
+        text = headText[@lineNumPos(headText, @gitSelOldTop) ... @lineNumPos(headText, @gitSelOldBot)]
+        @diffView = new @PopupView @, text, yes
         @setSelection()
         return
     @setSelection()
@@ -87,23 +88,30 @@ class Diff
     @nextLA -1
       
   getLAText: (vers) ->
-    laText  = @load.text(@projPath, @filePath, vers).text
     newText = @editor.getText()
-    posIn   = [@lineNumPos(newText, @topSelRow), 
-               @lineNumPos(newText, @botSelRow)]
-    [topPos, botPos] = @save.trackPos newText, laText, posIn
-    laText = laText[topPos ... botPos]
-    @diffView ?= new @PopupView @, laText, no
-    laText
-    
+    laText  = @load.text(@projPath, @filePath, vers).text
+    [topPos, botPos] = @save.trackPos newText, laText, [@topSelPos, @botSelPos]
+    laText[topPos ... botPos]
+
+  showDiffView: (txt) ->
+    if not @diffView then @diffView = new @PopupView @, txt, no
+    else @diffView.setText txt
+
   nextLA: (delta) ->
-    if not @laVersionNum then @laText = @getLAText(@laVersionNum = -1)
-    laText = @laText
-    loop 
-      if (delta is 1 and @laVersionNum is -1 or delta is -1 and @laText is '') or
-         (laText = @getLAText(@laVersionNum += delta)) isnt @laText then break
-    @diffView.setText (@laText = laText)
-    
+    startVers = @lastLAVers ? -1
+    while not (delta is +1 and @lastLAVers is -1 or delta is -1 and @lastLAText is '')
+      @lastLAVers =  (if not @lastLAVers? then -1 else @lastLAVers + delta)
+      text = @getLAText @lastLAVers
+      if text is '' or text not in [@editor.getSelectedText(), @lastLAText]
+        @showDiffView(@lastLAText = text)
+        return
+      if (timedOut = (@lastLAVers % 5 is 0)) then break
+    @showDiffView """
+      --- No Difference Found ---
+      No difference was found in the selection from version #{startVers} to version #{@lastLAVers}.
+      #{if timedOut then 'Use the nav arrows to try more versions.' else ''}
+    """
+
   getDiffBox: ->
     sbr = @editor.getSelectedBufferRange()
     frstRow     = sbr.start.row
@@ -123,8 +131,8 @@ class Diff
     {left, top, right, bottom}
     
   revert: (text) -> 
-    if atom.workspaceView.getActiveView()?.getEditor?() isnt @editor or
-    	   @originalSelText isnt @editor.getSelectedText()
+    selText = @editor.getSelectedText()
+    if atom.workspaceView.getActiveView()?.getEditor?() isnt @editor or selText isnt @originalSelText
       atom.confirm
         message: '--- Diff-Popup Error ---\n\n'
         detailedMessage: 'The text to be reverted has been modified. Please re-open the popup and try again.'

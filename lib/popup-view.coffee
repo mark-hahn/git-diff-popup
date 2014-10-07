@@ -58,9 +58,9 @@ class PopupView extends View
       switch classes[iconIdx+5...]
         when 'left-open'  then @diff.nextLA -1
         when 'right-open' then @diff.nextLA +1
-        when 'reply'      then @diff.revert diffText;         @diff.close()
-        when 'docs'       then atom.clipboard.write diffText; @diff.close()
-        when 'cancel'     then                                @diff.close()
+        when 'reply'      then @diff.revert         @diffText.text(); @diff.close()
+        when 'docs'       then atom.clipboard.write @diffText.text(); @diff.close()
+        when 'cancel'     then                                        @diff.close()
         
     @subscribe atom.workspaceView, 'keydown', (e) => 
       if e.which is 27 then @diff.close() 
@@ -94,6 +94,7 @@ class PopupView extends View
     else if pW < dL
       [left, top, right, bottom] = [20, 20, 'auto', 'auto']
     @css {left, top, right, bottom, visibility: 'visible'}
+    
     if @isGitHead
       @gitIcon.css           display: 'inline-block'
       @find('.laIcons').css  display: 'none'
@@ -109,11 +110,11 @@ class PopupView extends View
       right:      'auto';
       bottom:     'auto';
       left: 			'auto';
+    @textOuter.css width: 'auto', height: 'auto'
     process.nextTick => @setViewPosDim()
   
   destroy: ->
+    @destroyed = yes
     @detach()
     @unsubscribe()
     atom.workspaceView.find('.editor:visible').focus()
-    
-    
