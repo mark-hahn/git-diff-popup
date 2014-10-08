@@ -9,7 +9,7 @@ git-diff-popup
 
 ## Details
 
-Git-Diff-Popup (GDP) allows you to view a text difference from the Git repository head in a small pop-up without adding or changing tabs.  A difference is one or more adjacent changes, commonly known as a chunk.  The pop-up shows the old version.  At the top of the pop-up are buttons that allow you to copy the changes to the clipboard or to revert the changes each in one click.  GDP enables a fast intuitive workflow when retrieving or comparing versions of localized text.  
+Git-Diff-Popup (GDP) allows you to view a text difference from the Git repository head in a small pop-up without adding or changing tabs.  A difference is one or more adjacent changed lines, commonly known as a chunk.  The pop-up shows the old version.  At the top of the pop-up are buttons that allow you to copy the changes to the clipboard or revert the changes, each in one click.  GDP enables a fast intuitive workflow when retrieving or comparing versions of localized text.  
 
 GDP also supports the Live-Archive package version storage.  See the *Live Archive* Section below.
 
@@ -23,7 +23,7 @@ The following instructions assume Live-Archive is not installed. If it is then t
 
 There is one command `git-diff-popup:toggle` which is installed by default with the binding `ctrl-alt-D`. Make sure the cursor is on a changed line (in a difference chunk) and then execute the command. Two things will happen.  The entire chunk of lines will be selected and a pop-up will appear next to that selection with the old version from the Git repository head.
 
-Note that you do not click in the gutter but on the actual text to make the selection. If the cursor is not on a changed line then a warning will be given.
+Note that you do not click in the gutter but on the actual text to make the selection. If the cursor is not on a changed line then a warning will be given.  In order to select a deletion place the cursor on a line before or after the deletion.
 
 Once the pop-up is shown you can ...
 
@@ -31,7 +31,7 @@ Once the pop-up is shown you can ...
 - Change tabs and even edit text while the non-modal pop-up stays up.
 - Drag the pop-up around to reveal text underneath.
 - Click on the copy-all button which places all lines in the clipboard. The pop-up will close.
-- Click on the revert button to replace the selected text with the old version. The pop-up will close.
+- Click on the revert button to replace the selected text with the old version. The pop-up will close. (You may undo the revert).
 - Close the pop-up by clicking on the Close button, pressing escape, or pressing `ctrl-alt-D` again.
 
 ## Live Archive
@@ -46,7 +46,7 @@ The Live Archive holds a compressed snapshot of every save of every file in a pa
 
 - It supports many more versions than Git
 - It has more flexible selections with GDP than Git.  You can select any set of lines, not just difference chunks.
-- It has naviagation arrows to travel through time.
+- It has navigation arrows to travel through time.
 
 
 **Shameless plug:**  The Atom blog called Live-Archive an *"amazing feature-packed package which provides VCR-like controls for inspecting previous versions of files and their diffing."*  Now GDP adds the simpler pop-up.
