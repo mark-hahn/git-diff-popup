@@ -1,12 +1,9 @@
 git-diff-popup
 ==========
 
-Atom editor package to easily show one Git diff in a pop-up.
+Atom editor package to easily show one Git diff in a small pop-up.
 
-# to-do
-  popup layout
-  toolbar
-  scan for previous change
+  ![Animated GIF](https://github.com/mark-hahn/git-diff-popup/blob/master/screenshots/diff.gif?raw=true)
 
-# bugs
-- fold breaks selection icons
+  ![Animated GIF](https://github.com/mark-hahn/git-diff-popup/blob/master/screenshots/diffla.gif?raw=true)
+
