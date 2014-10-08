@@ -1,6 +1,0 @@
-A sample line 1
-A sample line 2
-A sample line 3
-A sample line 4
-A sample line 5
-A sample line 6

@@ -3,7 +3,7 @@
 module.exports =
 class PopupView extends View
   @content: ->
-    @div class:'overlay from-top diff-popup native-key-bindings', tabindex: -1, draggable:no, =>
+    @div class:'overlay from-top diff-popup native-key-bindings', tabindex: -1, =>
       @div outlet:'toolBar', class:'diff-popup-toolbar', draggable:no, =>
         @div class:'drag-bkgd', draggable:no
         @div class:'drag-bkgd', draggable:no
@@ -26,19 +26,18 @@ class PopupView extends View
     @appendTo atom.workspaceView
     process.nextTick => @setViewPosDim()
     
-    @subscribe @toolBar, 'mousedown', (e) =>
+    @subscribe @, 'mousedown', (e) =>
       pos = @offset()
       @initLeft = pos.left; @initTop = pos.top
       @initPageX = e.pageX; @initPageY = e.pageY
+      if @initPageY > @initTop + 20 then return
       @dragging = yes
-      # console.log 'mousedown', e.which, @dragging
       false
       
     @subscribe atom.workspaceView, 'mousemove', (e) =>
       if @dragging
         if e.which is 0 
           @dragging = no
-          # console.log 'mousemove', e.which, @dragging
           return
         left = @initLeft + (e.pageX - @initPageX)
         top  = @initTop  + (e.pageY - @initPageY)
@@ -47,11 +46,9 @@ class PopupView extends View
       
     @subscribe @toolBar, 'mouseup',           (e) => 
       @dragging = no
-      # console.log '@toolBar mouseup', e.which, @dragging
       
     @subscribe atom.workspaceView, 'mouseup', (e) => 
       @dragging = no
-      # console.log 'workspaceView mouseup', e.which, @dragging
     
     @subscribe @btns, 'click', (e) =>
       classes = $(e.target).attr 'class'

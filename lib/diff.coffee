@@ -12,7 +12,6 @@ class Diff
     
     @editorView = atom.workspaceView.getActiveView()
     if not (@editor = @editorView?.getEditor?())
-      # console.log 'diff-popup: no editor in this tab'
       return
     @filePath = @editor.getPath()
     
