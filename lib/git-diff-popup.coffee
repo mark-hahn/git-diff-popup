@@ -1,5 +1,5 @@
 ###
-  lib\diff-popup.coffee
+  lib\git-diff-popup.coffee
 ###
 
 module.exports = 
@@ -15,13 +15,13 @@ module.exports =
     
     if not @gitRepo and not @haveLiveArchive
       atom.confirm
-        message: '--- Diff-Popup Error ---\n\n'
+        message: '--- git-diff-popup Error ---\n\n'
         detailedMessage: 'This project must have either a Git repository or ' +
-      	                 'an enabled Live-Archive to use the Diff-Popup package.'
+      	                 'an enabled Live-Archive to use the git-diff-popup package.'
         buttons: OK: -> 
       return
     
-    atom.workspaceView.command "diff-popup:toggle", => 
+    atom.workspaceView.command "git-diff-popup:toggle", => 
       if @diff then @diff.close(); @diff = null
       else @diff = new Diff @
     

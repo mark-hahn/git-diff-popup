@@ -1,14 +1,14 @@
 {
-  "name": "diff-popup",
-  "main": "./lib/diff-popup",
+  "name": "git-diff-popup",
+  "main": "./lib/git-diff-popup",
   "version": "0.1.0",
   "description": "Show Git or Live-Archive diffs in editor with one click.",
-  "repository": "https://github.com/mark-hahn/diff-popup",
+  "repository": "https://github.com/mark-hahn/git-diff-popup",
   "license": "MIT",
   "engines": {
     "atom": ">=0.130.0"
   },
-  "activationEvents": ["diff-popup:toggle"],
+  "activationEvents": ["git-diff-popup:toggle"],
   "dependencies": {
     "text-archive-engine": "mark-hahn/text-archive-engine#0.1.1"
   }

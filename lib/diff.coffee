@@ -18,7 +18,7 @@ class Diff
     @fs           = require 'fs'
     @PopupView    = require './popup-view'
     @archiveDir   = @projPath + '/.live-archive'
-    @maxGitGap    = atom.config.get 'diff-popup.maximumLinesInGitGap'
+    @maxGitGap    = atom.config.get 'git-diff-popup.maximumLinesInGitGap'
     {@load,@save} = require 'text-archive-engine'
     range         = @editor.getLastSelection().getBufferRange()
     @emptySel     = range.isEmpty()
@@ -77,7 +77,7 @@ class Diff
     @setSelection()
     if not @haveLiveArchive
       atom.confirm
-        message: '--- Diff-Popup Error ---\n\n'
+        message: '--- git-diff-popup Error ---\n\n'
         detailedMessage: "The selection does not overlap a git difference."
         buttons: OK: -> 
       return
@@ -133,7 +133,7 @@ class Diff
     selText = @editor.getSelectedText()
     if atom.workspaceView.getActiveView()?.getEditor?() isnt @editor or selText isnt @originalSelText
       atom.confirm
-        message: '--- Diff-Popup Error ---\n\n'
+        message: '--- git-diff-popup Error ---\n\n'
         detailedMessage: 'The text to be reverted has been modified. Please re-open the popup and try again.'
         buttons: OK: -> 
       return

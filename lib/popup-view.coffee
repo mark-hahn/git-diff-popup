@@ -3,8 +3,8 @@
 module.exports =
 class PopupView extends View
   @content: ->
-    @div class:'overlay from-top diff-popup native-key-bindings', tabindex: -1, =>
-      @div outlet:'toolBar', class:'diff-popup-toolbar', draggable:no, =>
+    @div class:'overlay from-top git-diff-popup native-key-bindings', tabindex: -1, =>
+      @div outlet:'toolBar', class:'git-diff-popup-toolbar', draggable:no, =>
         @div class:'drag-bkgd', draggable:no
         @div class:'drag-bkgd', draggable:no
         @div class:'drag-bkgd', draggable:no
