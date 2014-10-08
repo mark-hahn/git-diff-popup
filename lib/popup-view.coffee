@@ -65,8 +65,10 @@ class PopupView extends View
         
     @subscribe atom.workspaceView, 'keydown', (e) => 
       if e.which is 27 then @diff.close() 
-  
+      
   setViewPosDim: ->
+    # @css {top:0, left:0, visibility: 'visible'}
+    # return
     $win   = $ window
     wW     = $win.width()
     wH     = $win.height()
@@ -74,7 +76,7 @@ class PopupView extends View
     tH     = @textOuter.height()
     width  = Math.max 270, Math.min wW/2,  tW
     height = Math.max  40, Math.min wH-40, tH
-    @textOuter.css {width, height}
+    # @textOuter.css {width, height}
     
     pW = width  + @width()  - tW + 22
     pH = height + @height() - tH + 21 
@@ -103,9 +105,6 @@ class PopupView extends View
       when @version is 0 then @.find('.show-git').css display: 'inline-block'
       else                    @.find('.show-ver').css display: 'inline-block'
         
-    # if @diffText.text() is ''
-    #   @find('.icon-left-open').css display: 'none'
-  
   setText: (diffText, @version, @showMsg) ->
     @diffText.text diffText
     @css
