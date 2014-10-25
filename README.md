@@ -9,7 +9,7 @@ git-diff-popup
 
 ## Details
 
-Git-Diff-Popup (GDP) allows you to view a text difference from the Git repository head in a small pop-up without adding or changing tabs.  A difference is one or more adjacent changed lines, commonly known as a chunk.  The pop-up shows the old version.  At the top of the pop-up are buttons that allow you to copy the changes to the clipboard or revert the changes, each in one click.  GDP enables a fast intuitive workflow when retrieving or comparing versions of localized text.  
+Git-Diff-Popup (GDP) allows you to view a text difference from the Git repository head in a small pop-up without adding or changing tabs.  A difference is one or more adjacent changed lines, commonly known as a hunk.  The pop-up shows the old version.  At the top of the pop-up are buttons that allow you to copy the changes to the clipboard or revert the changes, each in one click.  GDP enables a fast intuitive workflow when retrieving or comparing versions of localized text.  
 
 GDP also supports the Live-Archive package version storage.  See the *Live Archive* Section below.
 
@@ -21,7 +21,7 @@ Use the normal `apm install Git-Diff-Popup` command or use the packages section 
 
 The following instructions assume Live-Archive is not installed. If it is then there will be slightly different instructions. See the *Live Archive* section below for these differences.
 
-There is one command `git-diff-popup:toggle` which is installed by default with the binding `ctrl-alt-D`. Make sure the cursor is on a changed line (in a difference chunk) and then execute the command. Two things will happen.  The entire chunk of lines will be selected and a pop-up will appear next to that selection with the old version from the Git repository head.
+There is one command `git-diff-popup:toggle` which is installed by default with the binding `ctrl-alt-D`. Make sure the cursor is on a changed line (in a difference hunk) and then execute the command. Two things will happen.  The entire hunk of lines will be selected and a pop-up will appear next to that selection with the old version from the Git repository head.
 
 Note that you do not click in the gutter but on the actual text to make the selection. If the cursor is not on a changed line then a warning will be given.  In order to select a deletion place the cursor on a line before or after the deletion.
 
@@ -45,7 +45,7 @@ The Live Archive holds a compressed snapshot of every save of every file in a pa
 **Live-Archive Advantages:**
 
 - It supports many more versions than Git
-- It has more flexible selections with GDP than Git.  You can select any set of lines, not just difference chunks.
+- It has more flexible selections with GDP than Git.  You can select any set of lines, not just difference hunks.
 - It has navigation arrows to travel through time.
 
 
@@ -57,6 +57,9 @@ Git-Diff-Popup chooses the Git repository or the Live Archive based on how text 
 
 When GDP is using Git there will be a Git icon at the top. When GDP uses the Live Archive there will instead be a faint version number such as `v7` to the left of the buttons.  `v1` is the newest version, `v2` is the next older one, etc.  There will also be left/right arrow buttons to navigate between versions.
 
+## Known Bugs
+
+- Executing command in Live-Archive review window tries to open non-existant file
 
 ## Acknowledgement
 

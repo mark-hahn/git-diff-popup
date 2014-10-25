@@ -1,8 +1,8 @@
 {
   "name": "git-diff-popup",
   "main": "./lib/git-diff-popup",
-  "version": "0.1.0",
-  "description": "Show Git or Live-Archive diffs in editor with one click.",
+  "version": "0.1.1",
+  "description": "Show Git or Live-Archive difference text directly in the editor.",
   "repository": "https://github.com/mark-hahn/git-diff-popup",
   "license": "MIT",
   "engines": {
