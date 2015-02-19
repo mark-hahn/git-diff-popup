@@ -27,5 +27,5 @@ module.exports =
     
   diffClosed: -> @diff = null
       
-  deactivate: -> @diff.close()
+  deactivate: -> @diff?.close()
   

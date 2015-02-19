@@ -1,3 +1,7 @@
+
+## 0.1.2 - 2/19/15
+* fixed border
+
 ## 0.1.1
 * Changed references to chunk to hunk in readme
 

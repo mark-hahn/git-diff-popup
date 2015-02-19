@@ -9,6 +9,7 @@ class PopupView extends View
         @div class:'drag-bkgd', draggable:no
         @div class:'drag-bkgd', draggable:no
         @div class:'drag-bkgd', draggable:no
+        @div class:'drag-bkgd', draggable:no
         @div outlet: 'btns', class: 'btns', =>
           @span class:'show-git icon-git'
           @span outlet:'laVersion', class:'show-ver show-msg la-version'
