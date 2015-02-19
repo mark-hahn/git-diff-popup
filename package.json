@@ -10,6 +10,6 @@
   },
   "activationEvents": ["git-diff-popup:toggle"],
   "dependencies": {
-    "text-archive-engine": "mark-hahn/text-archive-engine#0.1.1"
+    "text-archive-engine": "*"
   }
 }
