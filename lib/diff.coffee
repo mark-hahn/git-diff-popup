@@ -112,14 +112,17 @@ class Diff
     @lastLAText = null
     
   getDiffBox: ->
-    sbr = @editor.getSelectedBufferRange()
-    frstRow     = sbr.start.row
-    lastRow     = sbr.end.row
+    sbr         = @editor.getSelectedBufferRange()
+    frstRow     = sbr.start.row - 1
+    lastRow     = sbr.end.row + 1
+    while ($line = @editorView.find '.line[data-screen-row="' + (++frstRow) + '"]')
+          .length is 0 and frstRow < lastRow then
+    while @editorView.find('.line[data-screen-row="' + (--lastRow) + '"]')
+          .length is 0 and lastRow > frstRow then
     $scrollView = @editorView.find '.scroll-view'
     {left:svLft, top:svTop} = $scrollView.offset() 
     svRgt       = svLft + $scrollView.width()
     svBot       = svTop + $scrollView.height()
-    $line       = @editorView.find '.line[data-screen-row="' + frstRow + '"]'
     {left, top} = $line.offset()
     right       = left + $line.width()
     bottom      = top + (lastRow - frstRow) * $line.height()

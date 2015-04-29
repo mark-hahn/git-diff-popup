@@ -1,4 +1,8 @@
 
+## 0.1.3 - 4/28/15
+* updated to getDirectories (hard-wired for first)
+* fixed opening with selection extending above screen
+
 ## 0.1.2 - 2/19/15
 * fixed border
 
