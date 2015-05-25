@@ -1,4 +1,7 @@
-{$, View} = require 'atom'
+$ = require 'jquery'
+
+{View} = require 'atom-space-pen-views'
+SubAtom = require 'sub-atom'
 
 module.exports =
 class PopupView extends View
@@ -23,11 +26,12 @@ class PopupView extends View
         @pre outlet:'diffText', class: 'diff-text editor-colors', =>
 
   initialize: (@diff, diffText, @version, @showMsg) ->
+    @subs = new SubAtom
     @diffText.text diffText
-    @appendTo atom.workspaceView
+    @appendTo atom.views.getView atom.workspace
     process.nextTick => @setViewPosDim()
     
-    @subscribe @, 'mousedown', (e) =>
+    @subs.add @, 'mousedown', (e) =>
       pos = @offset()
       @initLeft = pos.left; @initTop = pos.top
       @initPageX = e.pageX; @initPageY = e.pageY
@@ -35,7 +39,7 @@ class PopupView extends View
       @dragging = yes
       false
       
-    @subscribe atom.workspaceView, 'mousemove', (e) =>
+    @subs.add atom.views.getView(atom.workspace), 'mousemove', (e) =>
       if @dragging
         if e.which is 0 
           @dragging = no
@@ -45,13 +49,13 @@ class PopupView extends View
         @css {left, top, right: 'auto', bottom: 'auto'}
         false
       
-    @subscribe @toolBar, 'mouseup',           (e) => 
+    @subs.add @toolBar, 'mouseup',           (e) => 
       @dragging = no
       
-    @subscribe atom.workspaceView, 'mouseup', (e) => 
+    @subs.add atom.workspace, 'mouseup', (e) => 
       @dragging = no
     
-    @subscribe @btns, 'click', (e) =>
+    @subs.add @btns, 'click', (e) =>
       classes = $(e.target).attr 'class'
       iconIdx = classes.indexOf 'icon-'
       switch classes[iconIdx+5...]
@@ -61,7 +65,7 @@ class PopupView extends View
         when 'docs'       then atom.clipboard.write @diffText.text(); @diff.close()
         when 'cancel'     then                                        @diff.close()
         
-    @subscribe atom.workspaceView, 'keydown', (e) => 
+    @subs.add atom.views.getView(atom.workspace), 'keydown', (e) => 
       if e.which is 27 then @diff.close() 
       
   setViewPosDim: ->
@@ -117,5 +121,6 @@ class PopupView extends View
   destroy: ->
     @destroyed = yes
     @detach()
-    @unsubscribe()
-    atom.workspaceView.find('.editor:visible').focus()
+    @subs.dispose()
+    if ($editor = $(atom.views.getView atom.workspace).find 'atom-text-editor:visible')
+      $editor.focus()

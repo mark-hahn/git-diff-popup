@@ -2,17 +2,16 @@
   lib\diff.coffee
 ###
 
-{$} = require 'atom'
-
+$ = require 'jquery'
+   
 module.exports = 
 class Diff
-  test1: ->
   constructor: (@diffPopup) ->
     {@projPath, @archiveDir, @haveLiveArchive, @gitRepo} = @diffPopup
     
-    @editorView = atom.workspaceView.getActiveView()
-    if not (@editor = @editorView?.getEditor?())
+    if not (@editor = atom.workspace.getActiveTextEditor())
       return
+    $editorView = atom.views.getView @editor
     @filePath = @editor.getPath()
     
     @fs           = require 'fs'
@@ -53,7 +52,7 @@ class Diff
     @originalSelText = @editor.getSelectedText()
     
   getSelection: ->
-    if @gitRepo and atom.project.getRepo().isPathModified @filePath
+    if @gitRepo and atom.project.getRepositories()[0].isPathModified @filePath
       gitDiffs = @gitRepo.getLineDiffs @filePath, @editor.getText()
       for gitDiff in gitDiffs
         if gitDiff.newLines is 0 then gitDiff.newStart++
@@ -115,11 +114,13 @@ class Diff
     sbr         = @editor.getSelectedBufferRange()
     frstRow     = sbr.start.row - 1
     lastRow     = sbr.end.row + 1
-    while ($line = @editorView.find '.line[data-screen-row="' + (++frstRow) + '"]')
+    @editorEle  = atom.views.getView @editor
+    $editorView = $ @editorEle.shadowRoot
+    while ($line = $editorView.find '.line[data-screen-row="' + (++frstRow) + '"]')
           .length is 0 and frstRow < lastRow then
-    while @editorView.find('.line[data-screen-row="' + (--lastRow) + '"]')
+    while $editorView.find('.line[data-screen-row="' + (--lastRow) + '"]')
           .length is 0 and lastRow > frstRow then
-    $scrollView = @editorView.find '.scroll-view'
+    $scrollView = $editorView.find '.scroll-view'
     {left:svLft, top:svTop} = $scrollView.offset() 
     svRgt       = svLft + $scrollView.width()
     svBot       = svTop + $scrollView.height()
@@ -134,7 +135,7 @@ class Diff
     
   revert: (text) -> 
     selText = @editor.getSelectedText()
-    if atom.workspaceView.getActiveView()?.getEditor?() isnt @editor or selText isnt @originalSelText
+    if atom.workspace.getActiveTextEditor() isnt @editor or selText isnt @originalSelText
       atom.confirm
         message: '--- git-diff-popup Error ---\n\n'
         detailedMessage: 'The text to be reverted has been modified. Please re-open the popup and try again.'

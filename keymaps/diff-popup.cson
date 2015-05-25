@@ -1,2 +1,2 @@
-'.editor:not(.mini)':
+'atom-text-editor:not(.mini)':
   'ctrl-alt-d': 'git-diff-popup:toggle'
