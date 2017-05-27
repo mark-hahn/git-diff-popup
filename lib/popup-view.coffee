@@ -122,5 +122,5 @@ class PopupView extends View
     @destroyed = yes
     @detach()
     @subs.dispose()
-    if ($editor = $(atom.views.getView atom.workspace).find 'atom-text-editor:visible')
+    if ($editor = $(atom.views.getView atom.workspace).find 'atom-text-editor:visible pane.active')
       $editor.focus()
